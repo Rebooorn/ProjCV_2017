@@ -1,5 +1,9 @@
+clc
+clear all
+close all
+
 % Load calibration image
-C=double(imread('../cpp/bin/calib/TargetA.png'))/255;
+C=double(imread('./ar/TargetA.png'))/255;
 % Pixel size of calibration image
 calibImagePixelsPerMM=0.5*11.6533333333;
 
@@ -13,8 +17,11 @@ K=[625.68234         0 316.52402
 [calib_pos, calib_hue, calib_mask]=ar_detect_colored_markers(C); % TODO
 figure('name','Calibration: Color Mask','numbertitle','off');
 imshow(calib_mask);
-
+calib_rgb = hsv2rgb(calib_hue);
 %%% TODO visualize center of mass and mean color of detected markers
+hold on
+plot(calib_pos(:,1),calib_pos(:,2),'o','MarkerEdgeColor','none','MarkerFaceColor',calib_rgb();
+hold off
 
 % Move origin to center of points and scale to millimeters
 calib_pos=(calib_pos-ones(size(calib_pos,1),1)*mean(calib_pos))/calibImagePixelsPerMM
