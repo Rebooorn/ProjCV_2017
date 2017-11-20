@@ -28,7 +28,8 @@ function [center_of_mass, color_hue, mask]=ar_detect_colored_markers(I)
 	% Find connected components
 	[ny,nx]=size(mask);
 	[label_image,n]=bwlabel(mask);
-	
+	figure;imshow(label_image);
+    
     center_of_mass = zeros(n+1,2);
     color_hue = zeros(n+1,3);
 	%%% Analyze components

@@ -9,7 +9,7 @@ calibImagePixelsPerMM=0.5*11.6533333333;
 
 % Intrinsic Parameters
 K=[625.68234         0 316.52402
-           0 623.28764 231.81022
+           0 623.28764 240.81022
            0         0         1]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,7 +20,9 @@ imshow(calib_mask);
 calib_rgb = hsv2rgb(calib_hue);
 %%% TODO visualize center of mass and mean color of detected markers
 hold on
-plot(calib_pos(:,1),calib_pos(:,2),'o','MarkerEdgeColor','none','MarkerFaceColor',calib_rgb();
+for i = 1:length(calib_rgb)
+    plot(calib_pos(i,1),calib_pos(i,2),'o','MarkerEdgeColor','none','MarkerFaceColor',calib_rgb(i,:));
+end
 hold off
 
 % Move origin to center of points and scale to millimeters
@@ -28,10 +30,10 @@ calib_pos=(calib_pos-ones(size(calib_pos,1),1)*mean(calib_pos))/calibImagePixels
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tracking by detection
-figure('name','Current frame','numbertitle','off');
-I=double(imread('../cpp/bin/test/cam1000.png'))/255;
-
-[pos,hue,mask]=ar_detect_colored_markers(I); % TODO
+% figure('name','Current frame','numbertitle','off');
+% I=double(imread('../cpp/bin/test/cam1000.png'))/255;
+% 
+% [pos,hue,mask]=ar_detect_colored_markers(I); % TODO
 
 
 %%% TODO Figure out which markers were matched and visualize
