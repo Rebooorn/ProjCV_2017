@@ -30,12 +30,17 @@ calib_pos=(calib_pos-ones(size(calib_pos,1),1)*mean(calib_pos))/calibImagePixels
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tracking by detection
-% figure('name','Current frame','numbertitle','off');
-% I=double(imread('../cpp/bin/test/cam1000.png'))/255;
-% 
-% [pos,hue,mask]=ar_detect_colored_markers(I); % TODO
 
+I=double(imread('.\ar\cam1000.png'))/255;
 
+[pos,hue,mask]=ar_detect_colored_markers(I); % TODO
+figure('name','Current frame','numbertitle','off');
+imshow(mask);
+hold on
+for i = 1:length(pos)
+    plot(pos(i,1),pos(i,2),'o');
+end
+hold off
 %%% TODO Figure out which markers were matched and visualize
 
 

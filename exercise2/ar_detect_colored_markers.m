@@ -14,21 +14,18 @@ function [center_of_mass, color_hue, mask]=ar_detect_colored_markers(I)
 	color_value=max(I,[],3);
 	color_chromacity=max(I,[],3)-min(I,[],3);
     color_saturation=color_chromacity./color_value;
-
+    
 	%%% Score is simply saturation with pixels under thresh_value intensity excluded
 	mask=ones(size(color_value));
 %   mask = color_value;
     mask(color_value<0.25)=0;
-    
-	
+
 	%%% (optional: morphological opening ... )
-	mask = bwareaopen(mask,2000);
-    
-    
+	mask = bwareaopen(mask,50);
+   
 	% Find connected components
 	[ny,nx]=size(mask);
 	[label_image,n]=bwlabel(mask);
-	figure;imshow(label_image);
     
     center_of_mass = zeros(n+1,2);
     color_hue = zeros(n+1,3);
