@@ -48,14 +48,45 @@ hold off
 % Use calibration to compute projection matrix
 
 %%% TODO Figure out projection matrix from planar homography
+% x refers to coordinates in reference plane, x_prime refers to points in
+% real-world(setting z-coordinate to be 0, and set zeros to the center?)
 
-
+x = zeros(2,4); 
+x_prime = zeros(2,4);
+H = dlt_homography(x,x_prime);
+if det(H)<0 % ensure det(H) to be positive
+    H=-H;
+end
+est = K\H;
+r1_prime = est(:,1);
+r2_prime = est(:,2);
+t_prime = est(:,3);
+t = 2*t_prime/(norm(r1_prime)+norm(r2_prime));
+r3_prime = cross(r1_prime,r2_prime);
+[u,s,v]=svd([r1_prime r2_prime r3_prime]);
+R = u*v';
+K_prime = [K zeros(3,1)];
+Rt = [R t;zeros(1,3) 1];
+P = K_prime*Rt;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Draw in coordinates of target (3D millimeters)
 
 %%% TODO Project and draw [0 0 0 1]'  [100 0 0 1]' [0 100 0 1]' and [0 0 100 1]' 
-
-
+orig = [0 0 0 1]';
+x_dir = [100 0 0 1]';
+y_dir = [0 100 0 1]';
+z_dir = [0 0 100 1]';
+orig_prime = P*orig;
+x_dir_prime = P*x_dir;
+y_dir_prime = P*y_dir;
+z_dir_prime = P*z_dir;
+figure;
+imshow(I);
+hold on
+plot([orig_prime(1)/orig_prime(3) x_dir_prime(1)/x_dir_prime(3)],[orig_prime(2)/orig_prime(3) x_dir_prime(2)/x_dir_prime(3)]);
+plot([orig_prime(1)/orig_prime(3) y_dir_prime(1)/y_dir_prime(3)],[orig_prime(2)/orig_prime(3) y_dir_prime(2)/y_dir_prime(3)]);
+plot([orig_prime(1)/orig_prime(3) z_dir_prime(1)/z_dir_prime(3)],[orig_prime(2)/orig_prime(3) z_dir_prime(2)/z_dir_prime(3)]);
+hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Draw a house. (optional)
 % front wall
