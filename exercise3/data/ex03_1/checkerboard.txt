@@ -1,0 +1,9 @@
+Checkerboard Phantom
+
+square size
+dx = 30 mm
+dy = 30 mm
+
+number of squares
+nx = 5
+ny = 7

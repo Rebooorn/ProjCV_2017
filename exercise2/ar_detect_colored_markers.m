@@ -15,11 +15,13 @@ function [center_of_mass, color_hue, mask]=ar_detect_colored_markers(I)
 	color_chromacity=max(I,[],3)-min(I,[],3);
     color_saturation=color_chromacity./color_value;
     
+    
 	%%% Score is simply saturation with pixels under thresh_value intensity excluded
 	mask=ones(size(color_value));
 %   mask = color_value;
     mask(color_value<0.25)=0;
-
+    mask(color_saturation<0.5)=0;
+    figure;imagesc(mask);title('mask');
 	%%% (optional: morphological opening ... )
 	mask = bwareaopen(mask,50);
    
@@ -41,19 +43,30 @@ function [center_of_mass, color_hue, mask]=ar_detect_colored_markers(I)
         Yc = Yc.*test;
         Xm = round(sum(Xc(:)) / sum(test(:)));
         Ym = round(sum(Yc(:)) / sum(test(:)));
-        if Xm<size(test,2)
-            center_of_mass(i+1,1) = Xm;
-        else
-            center_of_mass(i+1,1) = size(test,2)
-        end
-        
-        if Ym<size(test,1)
-            center_of_mass(i+1,2) = Ym;
-        else
-            center_of_mass(i+1,2) = size(test,1);
-        end
-        
-        color_hue(i+1,:)=rgb2hsv(I(center_of_mass(i+1,2),center_of_mass(i+1,1),:));
-    end
+        if(color_saturation(Ym,Xm)>0.6)
+            if Xm<size(test,2)
+                center_of_mass(i+1,1) = Xm;
+            else
+                center_of_mass(i+1,1) = size(test,2);
+            end
 
+            if Ym<size(test,1)
+                center_of_mass(i+1,2) = Ym;
+            else
+                center_of_mass(i+1,2) = size(test,1);
+            end
+
+            color_hue(i+1,:)=rgb2hsv(I(center_of_mass(i+1,2),center_of_mass(i+1,1),:));
+        end
+    end
+    % reshape and delete 0 elements
+    sizeC = size(center_of_mass);
+    NumZeroRows = sum(sum(center_of_mass==0))/2;
+    center_of_mass(center_of_mass==0)=[];
+    center_of_mass = reshape(center_of_mass,sizeC(1)-NumZeroRows,sizeC(2));
+   
+    color_hue(color_hue==0)=[];
+    color_hue = reshape(color_hue,sizeC(1)-NumZeroRows,sizeC(2)+1);
+    
+    
 end % function

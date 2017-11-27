@@ -5,8 +5,8 @@ close all
 % Load calibration image
 C=double(imread('./ar/TargetA.png'))/255;
 % Pixel size of calibration image
-% calibImagePixelsPerMM=0.5*11.6533333333;
-calibImagePixelsPerMM=3;
+calibImagePixelsPerMM=0.5*11.6533333333;
+% calibImagePixelsPerMM=1;
 
 % Intrinsic Parameters
 K=[625.68234         0 316.52402
@@ -17,8 +17,13 @@ K=[625.68234         0 316.52402
 % Calibration step
 [calib_pos, calib_hue, calib_mask]=ar_detect_colored_markers(C); % TODO
 
-calib_hue_real =calib_hue([3,4,6,20,24]+1,:);
-calib_pos_real =calib_pos([3,4,6,20,24]+1,:);
+% need to be automatical
+% calib_hue_real =calib_hue([3,4,6,20,24]+1,:);
+% calib_pos_real =calib_pos([3,4,6,20,24]+1,:);
+
+calib_hue_real =calib_hue;
+calib_pos_real =calib_pos;
+
 calib_rgb = hsv2rgb(calib_hue_real);
 
 figure('name','Calibration: Color Mask','numbertitle','off');
@@ -38,7 +43,12 @@ calib_pos_real=(calib_pos_real-ones(size(calib_pos_real,1),1)*mean(calib_pos_rea
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tracking by detection
 
-I=double(imread('.\ar\cam1004.png'))/255;
+% I=double(imread('.\ar\cam1004.png'))/255;
+% I=double(imread('./ar/cam1000.png'))/255;
+I=double(imread('./ar/cam1001.png'))/255;
+% I=double(imread('./ar/cam1002.png'))/255;
+% I=double(imread('./ar/cam1003.png'))/255;
+% I=double(imread('./ar/cam1004.png'))/255;
 
 [pos,hue,mask]=ar_detect_colored_markers(I); % TODO
 % figure('name','Current frame','numbertitle','off');
@@ -109,7 +119,7 @@ imshow(I);
 hold on
 plot([orig_prime(1)/orig_prime(3) x_dir_prime(1)/x_dir_prime(3)],[orig_prime(2)/orig_prime(3) x_dir_prime(2)/x_dir_prime(3)],'r');
 plot([orig_prime(1)/orig_prime(3) y_dir_prime(1)/y_dir_prime(3)],[orig_prime(2)/orig_prime(3) y_dir_prime(2)/y_dir_prime(3)],'g');
-plot([orig_prime(1)/orig_prime(3) z_dir_prime(1)/z_dir_prime(3)],[orig_prime(2)/orig_prime(3) z_dir_prime(2)/z_dir_prime(3)],'w');
+plot([orig_prime(1)/orig_prime(3) z_dir_prime(1)/z_dir_prime(3)],[orig_prime(2)/orig_prime(3) z_dir_prime(2)/z_dir_prime(3)],'b');
 % hold off
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Draw a house. (optional)
