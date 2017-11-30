@@ -144,8 +144,18 @@ Z_coor = cloud_cal(:,:,3).*double(labeled);
 mid_point = [sum(X_coor(:)) sum(Y_coor(:)) sum(Z_coor(:))]/sum(labeled(:));
 
 Dist = (X_coor-mid_point(1)).^2 + (Y_coor-mid_point(2)).^2 + (Z_coor-mid_point(3)).^2;
-Dist(Dist>=norm(mid_point)^2)=0;
+Dist(Dist>=0.99*norm(mid_point)^2)=0;
 corner_point = [X_coor(Dist==max(Dist(:))) Y_coor(Dist==max(Dist(:))) Z_coor(Dist==max(Dist(:))) ];
+
+% display location of center and corner
+[v,loc_corner] = max(Dist(:));
+Dist(Dist==0)=1000 ; %set background to 100
+[v,loc_center] = min(Dist(:));
+figure; imagesc(FinalRes); title('Center and corner','FontSize',18);
+hold on
+plot(ceil(loc_center/size(Dist,1)),mod(loc_center,size(Dist,1)),'w*');
+plot(ceil(loc_corner/size(Dist,1)),mod(loc_corner,size(Dist,1)),'wo');
+hold off
 
 width = 2*abs(mid_point(1)-corner_point(1))
 length = 2*abs(mid_point(2)-corner_point(2))

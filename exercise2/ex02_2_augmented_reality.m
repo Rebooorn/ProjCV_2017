@@ -59,12 +59,9 @@ I=double(imread('./ar/cam1001.png'))/255;
 % end
 % hold off
 index = zeros(length(calib_pos_real),1);
+
 %%% TODO Figure out which markers were matched and visualize
 for i = 1:length(calib_pos_real)
-%      color = calib_hue_real(i,:);
-%      dist =  hue- repmat(color,size(hue,1),1);
-%      dist = sum(dist.^2,2);
-%      dist = dist.^0.5;
      dist = abs(hue(:,1)-calib_hue_real(i,1));
      [val,index(i)]=min(dist);
 end
