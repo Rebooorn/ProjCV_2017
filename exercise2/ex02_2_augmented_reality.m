@@ -15,7 +15,7 @@ K=[625.68234         0 316.52402
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calibration step
-[calib_pos, calib_hue, calib_mask]=ar_detect_colored_markers(C); % TODO
+[calib_pos, calib_hue, calib_mask]=ar_detect_colored_markers(C); % use calibration image to get
 
 % need to be automatical
 % calib_hue_real =calib_hue([3,4,6,20,24]+1,:);
@@ -62,6 +62,7 @@ index = zeros(length(calib_pos_real),1);
 
 %%% TODO Figure out which markers were matched and visualize
 for i = 1:length(calib_pos_real)
+%    match real photo with calibration hue value
      dist = abs(hue(:,1)-calib_hue_real(i,1));
      [val,index(i)]=min(dist);
 end
