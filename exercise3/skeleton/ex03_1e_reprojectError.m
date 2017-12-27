@@ -16,15 +16,17 @@ for i = 1 : n_ima
     
     %% TODO!
     % Make points homogeneous.
-    % x = ???;
-    % X = ???;
+    x = [x_i;ones(1,size(x_i,2))];
+    X = [X_i;ones(1,size(X_i,2))];
     
     % Reproject world points and divide by third component.
     % ...
-    % x_reproj = ???;
+    x_reproj = K * [R{i} t{i}] * X;
+    temp = [x_reproj(3,:);x_reproj(3,:);x_reproj(3,:)];
+    x_reproj = x_reproj./temp;
     
     % Compute error (mean norm of residuals).
 	residuals=x-x_reproj;
-	% errors(i) = ???;
+	errors(i) = mean(sqrt((sum(residuals.*residuals))));
 end
 

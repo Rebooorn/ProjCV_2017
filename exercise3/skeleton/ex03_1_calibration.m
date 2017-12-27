@@ -24,17 +24,19 @@ load('../data/ex03_1/corPts.mat');
 rH = cell(n_ima,1);
 for i = 1:n_ima,
     % 1. Extract points for image i.
+    % size(x_i) = [2,48]
+    % size(X_i) = [3,48] !!
     x_i = x_pts{i};
     X_i = X_pts{i};
    
     % 2. Make them homogeneous.
     % TODO!
-    % x = ???;
-    % X = ???;
-    
+    x = [x_i; ones(1,size(x_i,2))];
+    X = [X_i(1:2,:); ones(1,size(X_i,2))];
     % 3. Calculate homography (just like ex04)
     % TODO! Implement ex03_1b_normalizedHomography(x,X)
     rH{i} = ex03_1b_computeHomography(x, X); 
+%     err = reprojection_error_homography(x,rH{i},X)
 end
 
 
@@ -53,9 +55,11 @@ end
 % with b = [B11, B12, B22, B13, B23, B33], where b = null(G).
 % Solve via SVD.
 %% TODO!
-% ...
-% b = ??? 
 
+% use svd to calculate the null space of G: ===> last colomn of V
+[Ug,Sg,Vg] = svd(G);
+b = Vg(:,size(Vg,2)); 
+B = [b(1), b(2), b(4);b(2), b(3), b(5);b(4), b(5), b(6)];
 
 %% d) Recovering Parameters
 % Calculate intrinsic parameters from the entries of the absolute conic
@@ -63,7 +67,7 @@ end
 
 % TODO! Implement ex03_1d_intrinsicParamsFromConic(b)
 [fu, fv, s, u0, v0] = ex03_1d_intrinsicParamsFromConic(b); 
-% K = ???;
+K = [fu, s, u0;0, fv, v0;0, 0, 1];
 
 % Calculate extrinsic parameters from the homography and K.
 R = cell(n_ima,1);
@@ -88,6 +92,7 @@ fprintf(1,'Reprojection error:    err = %3.5f pixels\n', err_mean);
 
 
 %% Show Points on Grid
+% for idx = 1:2,
 for idx = 1:n_ima,
     % Image points
     x = x_pts{idx};
@@ -95,7 +100,12 @@ for idx = 1:n_ima,
     %% TODO!
     % Reprojected world points
     % ...
-    % x_rep = ???;
+%     size(K)
+%     size([R{i} t{i}])
+%     size( X_pts{idx})
+    Xworld = [X_pts{idx};ones(1,size(x,2))];
+    x_rep = K*[R{idx} t{idx}] * Xworld;
+%     x_rep = rH{i} * Xworld;
 
     % Plot
     figure;
@@ -103,8 +113,8 @@ for idx = 1:n_ima,
     hold on;
     
     % Plot points and error-arrows.
-    % plot(?,?,'rx');
-    % plot(?,?, 'b+');
-    % quiver(?,?,?,?);
+    plot(x(1,:),x(2,:),'rx');
+    plot(x_rep(1,:)./x_rep(3,:),x_rep(2,:)./x_rep(3,:), 'b+');
+    quiver(x(1,:),x(2,:),(x_rep(1,:)./x_rep(3,:))-x(1,:),(x_rep(2,:)./x_rep(3,:))-x(2,:));
     hold off;
 end

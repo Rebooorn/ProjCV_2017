@@ -12,17 +12,12 @@ function [ fu, fv, s, u0, v0 ] = ex03_1d_intrinsicParamsFromConic( b )
 
 %% TODO!
 
-% v0 = ???;
- 
-% lambda = ???;
- 
-% fu = ???;
- 
-% fv = ???;
- 
-% s = ???;
- 
-% u0 = ???;
+v0 = (b(2)*b(4)-b(1)*b(5))/(b(1)*b(3)-b(2)*b(2));
+lambda = b(6) - ( b(4)*b(4)+v0*(b(2)*b(4)-b(1)*b(5)) )/(b(1));
+fu = sqrt(lambda/b(1));
+fv = sqrt( lambda*b(1)/(b(1)*b(3)-b(2)*b(2)) );
+s = -b(2)*fu*fu*fv/lambda;
+u0 = s*v0/fv - b(4)*fu*fu/lambda;
 
 end
 
