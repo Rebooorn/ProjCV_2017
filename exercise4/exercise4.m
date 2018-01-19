@@ -1,4 +1,4 @@
-setup;
+vl_setup;
 
 % set random state
 vl_twister('state', 1);
@@ -41,6 +41,7 @@ if ~exist(fullfile(tmp_dir,'descriptors.mat'), 'file')
   % TODO: save descriptors.mat
 else 
   disp('load descriptors');
+  load discriptors.mat
   % TODO: load descriptors.mat
 end
 

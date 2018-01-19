@@ -17,16 +17,18 @@ function [ X ] = ex03_2d_triangulation( x1,P1,x2,P2 )
         % Select point
         % TODO!
         % ...
+        x = x1(:,i);
+        x_p = x2(:,i);
         
         % Compose A matrix according to Hartley & Zisserman.
         % TODO!
         % ...
-        % A = ???;
+        A = [ x(1)*P1(3,:)-P1(1,:) ; x(2)*P1(3,:)-P1(2,:); x_p(1)*P2(3,:)-P2(1,:) ; x_p(2)*P2(3,:)-P2(2,:)]; 
         
         % Perform SVD and extract world point
         % TODO!
-        % ....
-        % X_tmp = ???;
+        [U,S,V]=svd(A);
+        X_tmp = V(:,end);
         
         X(:,i) = X_tmp;
     end

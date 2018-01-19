@@ -17,12 +17,12 @@ K = load(fullfile(ima_dir, 'intrinsic_K.txt'));
 
 %% b) The Eight Point Algorithm
 
-% 1. Load Point Correspondences as x1,x2
+% 1. Load Point Correspondences as x1,x24
 load(fullfile(ima_dir,'20bulliPoints.mat'));
 
 % 2. Compute fundamental matrix F using 8-Point algorithm
 % TODO! Implement the 8-point algorithm in ex03_05_2b_computeF(x1,x2)
-F = ex03_2b_computeF(x1,x2);
+F = ex03_2b_computeF(x1,x2,8);
 
 % Control
 % This is a matlab internal method for reference of your own implementation only!
@@ -30,7 +30,10 @@ F_ctrl = estimateFundamentalMatrix(x1(1:2,:)',x2(1:2,:)','Method','Norm8Point');
 
 % 3. Double-check epipolar constraint x'^T F x = 0
 % TODO!
-% ...
+disp('My implementation: err:');
+disp(diag(x2'*F*x1));
+disp('Ideal err:');
+disp(diag(x2'*F_ctrl*x1));
 
 % 4. Draw epipolar lines
 lines2 = epipolarLine(F,x1(1:2,:)');
@@ -39,25 +42,25 @@ borders2 = lineToBorderPoints(lines2, size(I2));
 borders1 = lineToBorderPoints(lines1, size(I1));
 
 % Draw in image 1
-figure;
-imshow(I1);
-hold on;
-plot(x1(1,:), x1(2,:),'go');
-line(borders1(:, [1,3])', borders1(:, [2,4])');
-hold off;
-
-% Draw in image 2
-figure;
-imshow(I2);
-hold on;
-line(borders2(:, [1,3])', borders2(:, [2,4])');
-plot(x2(1,:), x2(2,:),'go');
-hold off;
+% figure;
+% imshow(I1);
+% hold on;
+% plot(x1(1,:), x1(2,:),'go');
+% line(borders1(:, [1,3])', borders1(:, [2,4])');
+% hold off;
+% 
+% % Draw in image 2
+% figure;
+% imshow(I2);
+% hold on;
+% line(borders2(:, [1,3])', borders2(:, [2,4])');
+% plot(x2(1,:), x2(2,:),'go');
+% hold off;
 
 %% c) Camera Matrices 
 % Compute essential matrix E using known K.
 % TODO!
-% E=???;
+E=K'*F_ctrl*K;
 
 % Compute the four possible projection matrices.
 % TODO! Implement ex03_2c_possibleProjectionMatrices(E); 
@@ -65,12 +68,12 @@ allPossiblePs = ex03_2c_possibleProjectionMatrices(E);
 
 %% d) & e) Triangulation to identify correct setup.
 % TODO! Implement ex03_2e_getCorrectP(Ps,K,x1,x2); 
-P = ex03_2e_getCorrectP(Ps,K,x1(:,1),x2(:,1));
+P = ex03_2e_getCorrectP(allPossiblePs,K,x1(:,1),x2(:,1));
 
 % Compute camera matrices.
 % TODO!
-% P1 = ???;
-% P2 = ???;
+P1 = [diag([1,1,1]),zeros(3,1)];
+P2 = P;
   
 % Triangulate points.
 X_est = ex03_2d_triangulation(x1,P1,x2,P2);
@@ -78,18 +81,18 @@ X_est = ex03_2d_triangulation(x1,P1,x2,P2);
 % Plot triangulated points.
 figure;
 % TODO!
-% ...
+plot3(X_est(1,:)./X_est(4,:),X_est(2,:)./X_est(4,:),X_est(3,:)./X_est(4,:),'+');
 
 %% Visualize the camera locations and orientations in the same figure as the points
 
 % TODO!
 % First camera
-% R1 = ???;
-% t1 = ???;
+R1 = P1(:,1:3);
+t1 = P1(:,4);
 
 % Second camera
-% R2 = ???;
-% t2 = ???;
+R2 = P2(:,1:3);
+t2 = P2(:,4);
 
 cameraSize = 0.2;
 hold on;

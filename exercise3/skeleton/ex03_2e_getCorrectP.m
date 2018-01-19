@@ -11,17 +11,17 @@ function [ P, index ] = ex03_2e_getCorrectP( Ps, K, x1, x2 )
 % x1,x2:   a matching point set
 
     % First camera: P = [I|0] 
-    % P1 = ???;
+    P1 = [diag([1,1,1]),zeros(3,1)];
     
     for i = 1:4
         % Second camera candidate
         % TODO!
-        % P2 = ???;
+        P2 = Ps(:,:,i);
         
         % Triangulate a point using that candidate.
         % TODO! Implement ex03_2d_triangulation(x1,P1,x2,P2)
         
-        % X = ex03_2d_triangulation(?,?,?,?);
+        X = ex03_2d_triangulation(x1,K*P1,x2,K*P2);
         
         % For both cameras:
         %   Rotate back to camera coordinates.
@@ -29,8 +29,17 @@ function [ P, index ] = ex03_2e_getCorrectP( Ps, K, x1, x2 )
         %   Check z-component.
         %   Return the correct P and index of the 4 candidates.
         
+        %   move to camera space
+        x_1 = P1*X;
+        x_2 = P2*X;
+        if( sum(x_1(3,:)>0) == size(x_1,2) && sum(x_2(3,:)>0) == size(x_2,2))
+            P = P2;
+            index = i;
+        end
         % TODO!
-        % ...
+        
+        
+        
     end
 end
 
