@@ -1,3 +1,4 @@
+run('VLFEATROOT\toolbox\vl_setup.m')
 vl_setup;
 
 % set random state
@@ -37,11 +38,36 @@ vl_xmkdir(tmp_dir);
 if ~exist(fullfile(tmp_dir,'descriptors.mat'), 'file')  
   disp('> feature extraction');
   % TODO: select and extract Features
-  % ...
+  % 1158 images in total, for each image randomly select 150, and in total
+  % 173700 features are selected
+  n = length(names);
+  descriptors = zeros(128,173700);
+  flag = 0; %flag for last colomn of descriptors
+  for i = 1:n
+      % occasionally the number of features will be less than 150, then
+      % push all features and 
+      p = fullfile(img_dir,strcat(num2str(names{i}),'.jpg'));
+      a = imread(p);
+      % the size of feature vector is 128
+      [F,D] = vl_sift(rgb2gray(im2single(a)));
+      if size(D,2)>150
+        descriptors(:,flag+1:flag+150) = vl_colsubset(D,150);
+        flag = flag+150;
+      else
+        descriptors(:,flag+1:flag+size(D,2))=D;
+        flag = flag+size(D,2);
+      end
+  end
+  
+  descriptors(:,flag+1:end)=[];
+  save(fullfile(tmp_dir,'descriptors.mat'),'descriptors');
+%   save fullfile(tmp_dir,'descriptors.mat') descriptors
+  
   % TODO: save descriptors.mat
 else 
   disp('load descriptors');
-  load discriptors.mat
+  load(fullfile(tmp_dir,'descriptors.mat'));
+%   load discriptors.mat
   % TODO: load descriptors.mat
 end
 
@@ -49,11 +75,20 @@ end
 if ~exist(fullfile(tmp_dir,'kmeans_kdtree.mat'), 'file')  
   disp('> k-means'); 
   % TODO: compute kmeans and kdtree
-  % ...
+  % in 'descriptors' of last step, we generated 173700 features
+  % corresponding to 1158 images, here we compress all features(173700)
+  % into a codebook with length of 1000, using kmeans.
+  % cen is our dictionary. 
+  
+  [cen,refer] = vl_kmeans(descriptors,opt.k,'initialization','plusplus','algorithm','ann');
+  KDT = vl_kdtreebuild(cen);
+  save(fullfile(tmp_dir,'kmeans_kdtree.mat'),'cen','refer','KDT');
+%   save kmeans_kdtree.mat cen refer KDT
   % TODO: Save centers and kdtree
 else 
   disp('load kmeans-centers / kdtree')
   % TODO: load kmeans / kdtree
+  load(fullfile(tmp_dir,'kmeans_kdtree.mat'));
 end
 
 %%%
@@ -80,11 +115,24 @@ for subset = {'background_train', ...
     fclose(fid);
     
     n_images = numel(img_names);
-    fprintf('encode %d iamges\n', n_images);
+    fprintf('encode %d images\n', n_images);
     
     % TODO: compute encoding for each image
-
+    Cnt = zeros(opt.k,n_images);
+    for i = 1:n_images
+       % calculate each image and save to "enc"
+       p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+       a = imread(p);
+       [F,D] = vl_sift(rgb2gray(im2single(a)));
+       % D is the matrix 0f descriptors, size = (128,N),and ind is the
+       % mapping from D to cen 
+       [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+       tmp = histc(ind,1:1000);
+       Cnt(:,i) = tmp';
+    end
     % TODO save encodings
+    eval(strcat(char(subset),'=Cnt;'));
+    eval(strcat('save(''',out_path,''',''', char(subset),''')'));
 end
 
 %%%
@@ -92,9 +140,15 @@ end
 %%%
 disp('> classification');  
 
-% TODO Load training data
-% TODO Load labels: all positives get label '1', all negatives '-1' 
 
+% TODO Load training data
+load(fullfile(tmp_dir,'background_train_enc.mat'));
+load(fullfile(tmp_dir,'background_val_enc.mat'));
+load(fullfile(tmp_dir,'horse_train_enc.mat'));
+load(fullfile(tmp_dir,'horse_val_enc.mat'));
+% TODO Load labels: all positives get label '1', all negatives '-1' 
+labels = ones(1,size(background_train,2)+size(horse_train,2));
+labels(1,1:size(background_train,2)) = -1;
 % count how many images are there
 fprintf('Number of training images: %d positive, %d negative\n', ...
         sum(labels > 0), sum(labels < 0));
@@ -108,27 +162,45 @@ C = 1.0;
 
 % Train now SVM using the complete training set w. chosen C
 % TODO 
+[W,B] = vl_svmtrain([background_train, horse_train],labels,1.0/(C*length(labels)));
 
-% ---
-% Classify the test images and assess the performance
-% ---
+% % ---
+% % Classify the test images and assess the performance
+% % ---
 % Load testing data
 pos = load(fullfile(tmp_dir,'horse_val_enc.mat'));
 neg = load(fullfile(tmp_dir,'background_val_enc.mat'));
 % TODO: set test-labels (1/-1)
+labels_eva = ones(1,size(background_vals_enc,2)+size(horse_vals_enc,2));
+labels_eva(1,1:size(background_vals_enc,2)) = -1;
 
 fprintf('Number of testing images: %d positive, %d negative\n', ...
         sum(test_labels > 0), sum(test_labels < 0));
 
 % Test the linear SVM
 % TODO
-
+testScores = W'*[background_val, horse_val]+B;
 % Visualize the ranked list of images
 figure(1) ; clf ; set(1,'name','Ranked test images (subset)') ;
 displayRankedImageList(test_names, testScores, false, 36)  ;
 
 % Visualize the precision-recall curve
 % TODO
+[recall,precision] = vl_pr(labels_eva,scores);
+figure; plot(recall,precision);
+xlabel('recall');
+ylabel('precision');
 
 % Print results
 % TODO
+% print accuracy, TNR, and TPR
+comp = (testScores==labels_eva);
+Accuracy = sum(comp(:))/length(comp);
+TNR = comp(1,1:size(background_val,2));
+TNR = sum(TNR(:))/length(TNR);
+TPR = comp(1,size(background_val,2)+1:end);
+TPR = sum(TPR(:))/length(TPR);s
+
+disp(['Accuracy: ',num2str(Accuracy)]);
+disp(['True positive rate: ',num2str(TPR)]);
+disp(['True negative rate: ',num2str(TNR)]);
