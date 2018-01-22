@@ -1,4 +1,4 @@
-run('VLFEATROOT\toolbox\vl_setup.m')
+run('VLFEATROOT/toolbox/vl_setup.m')
 vl_setup;
 
 % set random state
@@ -171,22 +171,36 @@ C = 1.0;
 pos = load(fullfile(tmp_dir,'horse_val_enc.mat'));
 neg = load(fullfile(tmp_dir,'background_val_enc.mat'));
 % TODO: set test-labels (1/-1)
-labels_eva = ones(1,size(background_vals_enc,2)+size(horse_vals_enc,2));
-labels_eva(1,1:size(background_vals_enc,2)) = -1;
+% labels_eva ==> [ -1(background), 1(horse) ]
+labels_eva = ones(1,size(background_val,2)+size(horse_val,2));
+labels_eva(1,1:size(background_val,2)) = -1;
 
 fprintf('Number of testing images: %d positive, %d negative\n', ...
-        sum(test_labels > 0), sum(test_labels < 0));
+        sum(labels_eva > 0), sum(labels_eva < 0));
 
 % Test the linear SVM
-% TODO
+% We hope testScores to be identical to labels_eva
 testScores = W'*[background_val, horse_val]+B;
+testScores_horse = W'*horse_val+B;
 % Visualize the ranked list of images
+i = 1;
+test_names = cell(1,2);
+for subset = {'horse_val.txt','background_val.txt'}
+  fname = fullfile(data_dir, char(subset));
+  fid = fopen(fname);
+  tmp = textscan(fid,'%s'); 
+  test_names{i} = tmp{1};
+  fclose(fid);
+  i = i + 1;
+end
+test_names = cat(1,test_names{:})';
+
 figure(1) ; clf ; set(1,'name','Ranked test images (subset)') ;
 displayRankedImageList(test_names, testScores, false, 36)  ;
 
 % Visualize the precision-recall curve
 % TODO
-[recall,precision] = vl_pr(labels_eva,scores);
+[recall,precision,info] = vl_pr(labels_eva,testScores);
 figure; plot(recall,precision);
 xlabel('recall');
 ylabel('precision');
@@ -194,13 +208,15 @@ ylabel('precision');
 % Print results
 % TODO
 % print accuracy, TNR, and TPR
+testScores(testScores>=0) = 1;
+testScores(testScores<0) = -1;
 comp = (testScores==labels_eva);
 Accuracy = sum(comp(:))/length(comp);
 TNR = comp(1,1:size(background_val,2));
 TNR = sum(TNR(:))/length(TNR);
 TPR = comp(1,size(background_val,2)+1:end);
-TPR = sum(TPR(:))/length(TPR);s
+TPR = sum(TPR(:))/length(TPR);
 
 disp(['Accuracy: ',num2str(Accuracy)]);
-disp(['True positive rate: ',num2str(TPR)]);
+disp(['Average precision: ',info.ap]);
 disp(['True negative rate: ',num2str(TNR)]);

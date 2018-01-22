@@ -22,7 +22,7 @@ load(fullfile(ima_dir,'20bulliPoints.mat'));
 
 % 2. Compute fundamental matrix F using 8-Point algorithm
 % TODO! Implement the 8-point algorithm in ex03_05_2b_computeF(x1,x2)
-F = ex03_2b_computeF(x1,x2,8);
+F = ex03_2b_computeF(x1,x2,20);
 
 % Control
 % This is a matlab internal method for reference of your own implementation only!
@@ -40,7 +40,7 @@ lines2 = epipolarLine(F,x1(1:2,:)');
 lines1 = epipolarLine(F',x2(1:2,:)');
 borders2 = lineToBorderPoints(lines2, size(I2));
 borders1 = lineToBorderPoints(lines1, size(I1));
-
+% 
 % Draw in image 1
 % figure;
 % imshow(I1);
@@ -60,10 +60,17 @@ borders1 = lineToBorderPoints(lines1, size(I1));
 %% c) Camera Matrices 
 % Compute essential matrix E using known K.
 % TODO!
+% size(E)=(3,3)
 E=K'*F_ctrl*K;
+[U,S,V] = svd(E);
+% S = diag([S(1,1)+S(2,2),S(1,1)+S(2,2),0])/2;
+S = diag([1,1,0]);
+E = U*S*V';
 
 % Compute the four possible projection matrices.
 % TODO! Implement ex03_2c_possibleProjectionMatrices(E); 
+% size(P)=(3,4), which moves camera from original position to second
+% position
 allPossiblePs = ex03_2c_possibleProjectionMatrices(E);
 
 %% d) & e) Triangulation to identify correct setup.
@@ -74,14 +81,15 @@ P = ex03_2e_getCorrectP(allPossiblePs,K,x1(:,1),x2(:,1));
 % TODO!
 P1 = [diag([1,1,1]),zeros(3,1)];
 P2 = P;
-  
+
 % Triangulate points.
-X_est = ex03_2d_triangulation(x1,P1,x2,P2);
+X_est = ex03_2d_triangulation(x1,K*P1,x2,K*P2);
 
 % Plot triangulated points.
 figure;
 % TODO!
 plot3(X_est(1,:)./X_est(4,:),X_est(2,:)./X_est(4,:),X_est(3,:)./X_est(4,:),'+');
+grid on;
 
 %% Visualize the camera locations and orientations in the same figure as the points
 
@@ -96,9 +104,12 @@ t2 = P2(:,4);
 
 cameraSize = 0.2;
 hold on;
+xlim([-2,2]);
+ylim([-2,2]);
+zlim([-1,3]);
+
 grid on;
 plot3(t1(1),t1(2),t1(3), 'r*');
 plotCamera('Location', t1, 'Orientation', R1, 'Size', cameraSize, 'Color', 'r', 'Label', '1', 'Opacity', 0);
 plot3(t2(1),t2(2),t2(3), 'g*');
-plotCamera('Location', t2, 'Orientation', R2, 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
-
+plotCamera('Location', t2, 'Orientation', R2', 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
