@@ -61,7 +61,7 @@ borders1 = lineToBorderPoints(lines1, size(I1));
 % Compute essential matrix E using known K.
 % TODO!
 % size(E)=(3,3)
-E=K'*F_ctrl*K;
+E=K'*F*K;
 [U,S,V] = svd(E);
 % S = diag([S(1,1)+S(2,2),S(1,1)+S(2,2),0])/2;
 S = diag([1,1,0]);
@@ -100,7 +100,11 @@ t1 = P1(:,4);
 
 % Second camera
 R2 = P2(:,1:3);
-t2 = P2(:,4);
+% t2 = P2(:,4);
+% t is the null space of E
+[U,S,V] = svd(P2);
+t2 = V(:,4);
+t2 = t2/t2(4);
 
 cameraSize = 0.2;
 hold on;
@@ -110,6 +114,9 @@ zlim([-1,3]);
 
 grid on;
 plot3(t1(1),t1(2),t1(3), 'r*');
-plotCamera('Location', t1, 'Orientation', R1, 'Size', cameraSize, 'Color', 'r', 'Label', '1', 'Opacity', 0);
+% plotCamera('Location', t1, 'Orientation', R1, 'Size', cameraSize, 'Color', 'r', 'Label', '1', 'Opacity', 0);
 plot3(t2(1),t2(2),t2(3), 'g*');
-plotCamera('Location', t2, 'Orientation', R2', 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
+% plotCamera('Location', t2, 'Orientation', R2', 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
+xlabel('x');
+ylabel('y');
+zlabel('z');
