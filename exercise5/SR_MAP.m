@@ -6,7 +6,8 @@ function SR_MAP
     lrel=prod(sz(1:2));%the vector size of the lowres image vector
     psf=.6;
     K=20;%number of images
-    Wk=cell(K,1);yk=cell(K,1);
+    Wk=cell(K,1);
+    yk=cell(K,1);
     Wk{1}=composeSystemMatrix(sz(1:2),scale,psf,cell2mat(motionParams(1)));
     W=Wk{1};
     yk{1}=imageToVector(LRImages(:,:,1));
