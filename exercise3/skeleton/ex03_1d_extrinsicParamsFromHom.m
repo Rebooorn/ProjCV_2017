@@ -20,7 +20,7 @@ function [R,t] = ex03_1d_extrinsicParamsFromHom( H, K )
     % Enforce orthonormality using SVD (which is not a given due to noise).
     % ...
     [U, S, V] = svd([r1,r2,r3]);
-        
+    
     R = U*V';
     t = mu * inv(K)*H(:,3);
     

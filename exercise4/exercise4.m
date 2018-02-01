@@ -195,7 +195,7 @@ for subset = {'horse_val.txt','background_val.txt'}
 end
 test_names = cat(1,test_names{:})';
 
-figure(1) ; clf ; set(1,'name','Ranked test images (subset)') ;
+figure; 
 displayRankedImageList(test_names, testScores, false, 36)  ;
 
 % Visualize the precision-recall curve
@@ -218,5 +218,5 @@ TPR = comp(1,size(background_val,2)+1:end);
 TPR = sum(TPR(:))/length(TPR);
 
 disp(['Accuracy: ',num2str(Accuracy)]);
-disp(['Average precision: ',info.ap]);
+disp(['Average precision: ',num2str(info.ap)]);
 disp(['True negative rate: ',num2str(TNR)]);

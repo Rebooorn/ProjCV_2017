@@ -76,7 +76,7 @@ allPossiblePs = ex03_2c_possibleProjectionMatrices(E);
 %% d) & e) Triangulation to identify correct setup.
 % TODO! Implement ex03_2e_getCorrectP(Ps,K,x1,x2); 
 P = ex03_2e_getCorrectP(allPossiblePs,K,x1(:,1),x2(:,1));
-
+% P = -allPossiblePs(:,:,4);
 % Compute camera matrices.
 % TODO!
 P1 = [diag([1,1,1]),zeros(3,1)];
@@ -106,6 +106,9 @@ R2 = P2(:,1:3);
 t2 = V(:,4);
 t2 = t2/t2(4);
 
+% t2x = [0,-t2(3),t2(2);t2(3),0,-t2(1);-t2(2),t2(1),0];
+% R2 = E*inv(t2x);
+
 cameraSize = 0.2;
 hold on;
 xlim([-2,2]);
@@ -114,9 +117,9 @@ zlim([-1,3]);
 
 grid on;
 plot3(t1(1),t1(2),t1(3), 'r*');
-% plotCamera('Location', t1, 'Orientation', R1, 'Size', cameraSize, 'Color', 'r', 'Label', '1', 'Opacity', 0);
+plotCamera('Location', t1, 'Orientation', R1, 'Size', cameraSize, 'Color', 'r', 'Label', '1', 'Opacity', 0);
 plot3(t2(1),t2(2),t2(3), 'g*');
-% plotCamera('Location', t2, 'Orientation', R2', 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
+plotCamera('Location', t2(1:3), 'Orientation', R2, 'Size', cameraSize, 'Color', 'g', 'Label', '2', 'Opacity', 0);
 xlabel('x');
 ylabel('y');
 zlabel('z');

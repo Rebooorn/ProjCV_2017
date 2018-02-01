@@ -51,6 +51,7 @@ function SR_MAP
        fprintf('x');
        
        %using maximum a-posteriori
+       % need more discussion, Rx needs to take derivative
        lm=.0002;
        rx=norm((qu+qv)*x3)^2;
        p3=p1+lm*sqrt(norm(qu*x3)^2+norm(qv*x3)^2);

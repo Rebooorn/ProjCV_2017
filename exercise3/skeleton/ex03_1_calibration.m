@@ -46,7 +46,7 @@ end
 % ambiguity with Singular Vaue Decomposition.
 G = zeros(2*n_ima,6); 
 for i = 1:n_ima,
-    %% TODO!
+    % TODO!
     % Implement ex03_1c_constraintEquations(H)
     G((2*i)-1:(2*i), :) = ex03_1c_constraintEquations( rH{i} ); 
 end
@@ -93,7 +93,7 @@ fprintf(1,'Reprojection error:    err = %3.5f pixels\n', err_mean);
 
 %% Show Points on Grid
 % for idx = 1:2,
-for idx = 1:n_ima,
+for idx = 1:2,
     % Image points
     x = x_pts{idx};
 
