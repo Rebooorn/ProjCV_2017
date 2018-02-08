@@ -49,7 +49,11 @@ if ~exist(fullfile(tmp_dir,'descriptors.mat'), 'file')
       p = fullfile(img_dir,strcat(num2str(names{i}),'.jpg'));
       a = imread(p);
       % the size of feature vector is 128
-      [F,D] = vl_sift(rgb2gray(im2single(a)));
+      if strcmp(opt.feature,'sift')==1
+          [F,D] = vl_sift(rgb2gray(im2single(a)));
+      else
+          [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+      end
       if size(D,2)>150
         descriptors(:,flag+1:flag+150) = vl_colsubset(D,150);
         flag = flag+150;
@@ -91,12 +95,14 @@ else
   load(fullfile(tmp_dir,'kmeans_kdtree.mat'));
 end
 
-%%%
+
+%%
 % ENCODING
 %%%
 disp('> encoding');  
 
 % for each subset compute encoding
+
 for subset = {'background_train', ...
                 'background_val', ...
                 'horse_train', ...
@@ -118,21 +124,47 @@ for subset = {'background_train', ...
     fprintf('encode %d images\n', n_images);
     
     % TODO: compute encoding for each image
-    Cnt = zeros(opt.k,n_images);
-    for i = 1:n_images
-       % calculate each image and save to "enc"
-       p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
-       a = imread(p);
-       [F,D] = vl_sift(rgb2gray(im2single(a)));
-       % D is the matrix 0f descriptors, size = (128,N),and ind is the
-       % mapping from D to cen 
-       [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
-       tmp = histc(ind,1:1000);
-       Cnt(:,i) = tmp';
+    if strcmp(opt.encoding,'vq')
+        % using VQ for encoding
+        Cnt = zeros(opt.k,n_images);
+        for i = 1:n_images
+           % calculate each image and save to "enc"
+           p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+           a = imread(p);
+           if strcmp(opt.feature,'sift') 
+               [F,D] = vl_sift(rgb2gray(im2single(a))); 
+           else
+               [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+           end
+           % D is the matrix 0f descriptors, size = (128,N),and ind is the
+           % mapping from D to cen 
+           [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+           tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
+           Cnt(:,i) = tmp';
+        end
+        % TODO save encodings
+        eval(strcat(char(subset),'=Cnt;'));
+        eval(strcat('save(''',out_path,''',''', char(subset),''')'));
+    else
+        % using VLAD for encoding
+        Cnt = zeros(opt.k*128,n_image);
+        for i = 1:n_images
+           % calculate each image and save to "enc"
+           p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+           a = imread(p);
+           if strcmp(opt.feature,'sift') 
+               [F,D] = vl_sift(rgb2gray(im2single(a))); 
+           else
+               [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);  
+           end
+           [ind,dist]=vl_kdtreequery(KDT,cen,double(D));
+           % accumulate and catenate to a vector of k*d dimension
+           res = D - cen(:,ind);
+           
+           
+        end
+        
     end
-    % TODO save encodings
-    eval(strcat(char(subset),'=Cnt;'));
-    eval(strcat('save(''',out_path,''',''', char(subset),''')'));
 end
 
 %%%
