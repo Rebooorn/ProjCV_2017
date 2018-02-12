@@ -1,3 +1,15 @@
+%% Testing index
+% sift none vq none 0 1000
+% phow none vq none 0 1000 ==>0.5255
+% sift none vlad none 0 100 
+% sift none vlad intra 0 100
+% sift none vlad power 0 100
+% phow none vlad none 0 100
+% phow none vlad intra 0 100
+% phow none vlad power 0 100
+
+
+%% preparation
 run('VLFEATROOT/toolbox/vl_setup.m')
 vl_setup;
 
@@ -9,13 +21,13 @@ img_dir = fullfile('data', 'images');
 
 opt.feature = 'sift'; % sift or phow
 opt.feat_norm = 'none'; % none or hellinger
-opt.encoding = 'vq'; % vq or vlad
+opt.encoding = 'vlad'; % vq or vlad
 opt.enc_norm = 'none'; %none (only l2), intra, power
 opt.spp_levels = 0; % spatial pyramid level
-opt.k = 1000; % number of clusters (try for vq: 100 / 1000 / 10000, for vlad: 50 / 100 / 150)
+opt.k = 100; % number of clusters (try for vq: 100 / 1000 / 10000, for vlad: 50 / 100 / 150)
 
 % get all training images
-i = 1;
+i = 1; 
 names = cell(1,2);
 for subset = {'background_train.txt', ...                
               'horse_train.txt'}
@@ -131,10 +143,11 @@ for subset = {'background_train', ...
            % calculate each image and save to "enc"
            p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
            a = imread(p);
-           if strcmp(opt.feature,'sift') 
-               [F,D] = vl_sift(rgb2gray(im2single(a))); 
-           else
+           if strcmp(opt.feature,'phow')
+               % by default using sift
                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+           else
+               [F,D] = vl_sift(rgb2gray(im2single(a))); 
            end
            % D is the matrix 0f descriptors, size = (128,N),and ind is the
            % mapping from D to cen 
@@ -147,23 +160,37 @@ for subset = {'background_train', ...
         eval(strcat('save(''',out_path,''',''', char(subset),''')'));
     else
         % using VLAD for encoding
-        Cnt = zeros(opt.k*128,n_image);
+        Cnt = zeros(opt.k*128,n_images);
         for i = 1:n_images
            % calculate each image and save to "enc"
            p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
            a = imread(p);
-           if strcmp(opt.feature,'sift') 
+           if strcmp(opt.feature,'sift')
                [F,D] = vl_sift(rgb2gray(im2single(a))); 
            else
                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);  
            end
            [ind,dist]=vl_kdtreequery(KDT,cen,double(D));
            % accumulate and catenate to a vector of k*d dimension
-           res = D - cen(:,ind);
-           
-           
+           res = double(D) - cen(:,ind);
+           for j = 1:opt.k
+              if strcmp(opt.enc_norm,'power')==1
+                  tmp = sum(res(:,ind==j),2);
+                  Cnt(128*j-127:128*j,i) = sqrt(abs(tmp));
+              elseif strcmp(opt.enc_norm,'intra')==1
+                  tmp = sum(res(:,ind==j),2);
+                  Cnt(128*j-127:128*j,i) = tmp/norm(tmp,2);
+              else
+                  % none method
+                  Cnt(128*j-127:128*j,i) = sum(res(:,ind==j),2);
+              end
+           end
+           % followed by global normalization
+           Cnt(:,i) = Cnt(:,i)/norm(Cnt(:,i),2);
         end
-        
+        % save encoding 
+        eval(strcat(char(subset),'=Cnt;'));
+        eval(strcat('save(''',out_path,''',''', char(subset),''')'));
     end
 end
 
