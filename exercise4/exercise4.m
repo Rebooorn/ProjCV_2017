@@ -160,10 +160,24 @@ for subset = {'background_train', ...
            [ind,dist]=vl_kdtreequery(KDT,cen,double(D));
            % accumulate and catenate to a vector of k*d dimension
            res = D - cen(:,ind);
-           
-           
+           for j = 1:opt.k
+               if sum(ind==j)>0
+                   % normalization according to option
+                   tmp = sum(res(:,ind==j),2);
+                   if strcmp(opt.enc_norm,'intra')
+                       Cnt(128*j-128:128*j,i) = tmp/norm(tmp,2);
+                   elseif strcmp(opt.enc_norm,'power')
+                       Cnt(128*j-128:128*j,i) = sqrt(abs(tmp));
+                   else                       
+                       Cnt(128*j-128:128*j,i) = tmp;
+                   end
+               end
+           end
+           Cnt(:,i) = Cnt(:,i)/norm(Cnt(:,i),2);
         end
-        
+        % save encoding
+        eval(strcat(char(subset),'=Cnt;'));
+        eval(strcat('save(''',out_path,''',''', char(subset),''')'));       
     end
 end
 
