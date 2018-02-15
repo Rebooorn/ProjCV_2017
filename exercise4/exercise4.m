@@ -6,10 +6,12 @@
 % phow none vq none 0 1000 ==>0.5255
 % sift none vlad none 0 100 ==> 0.426
 % sift none vlad intra 0 100 ==> 0.426
-% sift none vlad power 0 100
-% phow none vlad none 0 100
-% phow none vlad intra 0 100
-% phow none vlad power 0 100
+% sift none vlad power 0 100 ==> 0.29 :(
+% phow none vlad none 0 100 ==> 0.71
+% phow none vlad intra 0 100 ==> 0.71
+% phow none vlad intra 0 150 ==> 0.73
+% phow none vlad intra 0 50 ==> 0.68
+% phow none vq none 0 100
 
 
 %% preparation
@@ -22,10 +24,10 @@ vl_twister('state', 1);
 data_dir = 'data';
 img_dir = fullfile('data', 'images');
 
-opt.feature = 'sift'; % sift or phow
+opt.feature = 'phow'; % sift or phow
 opt.feat_norm = 'none'; % none or hellinger
-opt.encoding = 'vlad'; % vq or vlad
-opt.enc_norm = 'power'; %none (only l2), intra, power
+opt.encoding = 'vq'; % vq or vlad
+opt.enc_norm = 'none'; %none (only l2), intra, power
 opt.spp_levels = 0; % spatial pyramid level
 opt.k = 100; % number of clusters (try for vq: 100 / 1000 / 10000, for vlad: 50 / 100 / 150)
 
@@ -186,53 +188,53 @@ for subset = {'background_train', ...
         % using VQ for encoding
         Cnt = zeros(opt.k,n_images);
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%         for i = 1:n_images
-%            % calculate each image and save to "enc"
-%            p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
-%            a = imread(p);
-%            if strcmp(opt.feature,'phow')
-%                % by default using sift
-%                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
-%            else
-%                [F,D] = vl_sift(rgb2gray(im2single(a))); 
-%            end
-%            % D is the matrix 0f descriptors, size = (128,N),and ind is the
-%            % mapping from D to cen 
-%            [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
-%            tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
-%            Cnt(:,i) = tmp';
-%         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % parfor version 
-        if strcmp(opt.feature,'phow')
-           % phow method 
-           parfor i = 1:n_images
-               % calculate each image and save to "enc"
-               p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
-               a = imread(p);
+        for i = 1:n_images
+           % calculate each image and save to "enc"
+           p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+           a = imread(p);
+           if strcmp(opt.feature,'phow')
+               % by default using sift
                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
-               % D is the matrix 0f descriptors, size = (128,N),and ind is the
-               % mapping from D to cen 
-               [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
-               tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
-               Cnt(:,i) = tmp';
-            end
-        else
-           % sift method 
-           for i = 1:n_images
-               % calculate each image and save to "enc"
-               p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
-               a = imread(p);
+           else
                [F,D] = vl_sift(rgb2gray(im2single(a))); 
-               % D is the matrix 0f descriptors, size = (128,N),and ind is the
-               % mapping from D to cen 
-               [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
-               tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
-               Cnt(:,i) = tmp';
-            end
-            
+           end
+           % D is the matrix 0f descriptors, size = (128,N),and ind is the
+           % mapping from D to cen 
+           [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+           tmp = histc(ind,1:opt.k)./norm(histc(ind,1:opt.k),2);
+           Cnt(:,i) = tmp';
         end
-        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         % parfor version 
+%         if strcmp(opt.feature,'phow')
+%            % phow method 
+%            parfor i = 1:n_images
+%                % calculate each image and save to "enc"
+%                p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+%                a = imread(p);
+%                [F,D1] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+%                % D is the matrix 0f descriptors, size = (128,N),and ind is the
+%                % mapping from D to cen 
+%                [ind,dist]=vl_kdtreequery(KDT,cen,double(D1)); 
+%                tmp = histc(ind,1:opt.k)./norm(histc(ind,1:opt,k),2);
+%                Cnt(:,i) = tmp';
+%             end
+%         else
+%            % sift method 
+%            for i = 1:n_images
+%                % calculate each image and save to "enc"
+%                p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+%                a = imread(p);
+%                [F,D] = vl_sift(rgb2gray(im2single(a))); 
+%                % D is the matrix 0f descriptors, size = (128,N),and ind is the
+%                % mapping from D to cen 
+%                [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+%                tmp = histc(ind,1:opt.k)./norm(histc(ind,1:opt.k),2);
+%                Cnt(:,i) = tmp';
+%             end
+%             
+%         end
+%         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % TODO save encodings
