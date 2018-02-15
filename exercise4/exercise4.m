@@ -1,8 +1,11 @@
+
+
 %% Testing index
+% remember to clear all for parfor
 % sift none vq none 0 1000
 % phow none vq none 0 1000 ==>0.5255
-% sift none vlad none 0 100 
-% sift none vlad intra 0 100
+% sift none vlad none 0 100 ==> 0.426
+% sift none vlad intra 0 100 ==> 0.426
 % sift none vlad power 0 100
 % phow none vlad none 0 100
 % phow none vlad intra 0 100
@@ -22,7 +25,7 @@ img_dir = fullfile('data', 'images');
 opt.feature = 'sift'; % sift or phow
 opt.feat_norm = 'none'; % none or hellinger
 opt.encoding = 'vlad'; % vq or vlad
-opt.enc_norm = 'none'; %none (only l2), intra, power
+opt.enc_norm = 'power'; %none (only l2), intra, power
 opt.spp_levels = 0; % spatial pyramid level
 opt.k = 100; % number of clusters (try for vq: 100 / 1000 / 10000, for vlad: 50 / 100 / 150)
 
@@ -53,29 +56,71 @@ if ~exist(fullfile(tmp_dir,'descriptors.mat'), 'file')
   % 1158 images in total, for each image randomly select 150, and in total
   % 173700 features are selected
   n = length(names);
-  descriptors = zeros(128,173700);
-  flag = 0; %flag for last colomn of descriptors
-  for i = 1:n
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   descriptors = zeros(128,173700);
+%   flag = 0; %flag for last colomn of descriptors
+%   for i = 1:n
+%       % occasionally the number of features will be less than 150, then
+%       % push all features and 
+%       p = fullfile(img_dir,strcat(num2str(names{i}),'.jpg'));
+%       a = imread(p);
+%       % the size of feature vector is 128
+%       if strcmp(opt.feature,'sift')==1
+%           [F,D] = vl_sift(rgb2gray(im2single(a)));
+%       else
+%           [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+%       end
+%       if size(D,2)>150
+%         descriptors(:,flag+1:flag+150) = vl_colsubset(D,150);
+%         flag = flag+150;
+%       else
+%         descriptors(:,flag+1:flag+size(D,2))=D;
+%         flag = flag+size(D,2);
+%       end
+%   end
+%   
+%   descriptors(:,flag+1:end)=[];
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % change for parfor version
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % !!!!!!!!!!because of parallel computation, descriptors must be clear
+  % here
+  clear descriptors;
+  if strcmp(opt.feature,'sift')==1
+    parfor i = 1:n
       % occasionally the number of features will be less than 150, then
       % push all features and 
       p = fullfile(img_dir,strcat(num2str(names{i}),'.jpg'));
       a = imread(p);
       % the size of feature vector is 128
-      if strcmp(opt.feature,'sift')==1
-          [F,D] = vl_sift(rgb2gray(im2single(a)));
-      else
-          [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
-      end
+      [F,D] = vl_sift(rgb2gray(im2single(a)));
       if size(D,2)>150
-        descriptors(:,flag+1:flag+150) = vl_colsubset(D,150);
-        flag = flag+150;
+        descriptors{i} = vl_colsubset(D,150);
       else
-        descriptors(:,flag+1:flag+size(D,2))=D;
-        flag = flag+size(D,2);
-      end
+        descriptors{i}= D;
+      end      
+%         descriptors{i}=i;
+    end
+  else
+%   phow method 
+    parfor i = 1:n
+      % occasionally the number of features will be less than 150, then
+      % push all features and 
+      p = fullfile(img_dir,strcat(num2str(names{i}),'.jpg'));
+      a = imread(p);
+      % the size of feature vector is 128
+      [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+      if size(D,2)>150
+        descriptors{i} = vl_colsubset(D,150);
+      else
+        descriptors{i} = D ;
+      end      
+    end
   end
-  
-  descriptors(:,flag+1:end)=[];
+  disp('reach here');
+  descriptors = cell2mat(descriptors);
+  descriptors = double(descriptors);
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   save(fullfile(tmp_dir,'descriptors.mat'),'descriptors');
 %   save fullfile(tmp_dir,'descriptors.mat') descriptors
   
@@ -124,6 +169,7 @@ for subset = {'background_train', ...
     fprintf('| Processing %s\n', out_path);    
     if exist(out_path, 'file')
       disp('| loaded saved file');
+      
       continue; 
     end
     fname = fullfile(data_dir, [char(subset) '.txt']);
@@ -139,22 +185,56 @@ for subset = {'background_train', ...
     if strcmp(opt.encoding,'vq')
         % using VQ for encoding
         Cnt = zeros(opt.k,n_images);
-        for i = 1:n_images
-           % calculate each image and save to "enc"
-           p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
-           a = imread(p);
-           if strcmp(opt.feature,'phow')
-               % by default using sift
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         for i = 1:n_images
+%            % calculate each image and save to "enc"
+%            p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+%            a = imread(p);
+%            if strcmp(opt.feature,'phow')
+%                % by default using sift
+%                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
+%            else
+%                [F,D] = vl_sift(rgb2gray(im2single(a))); 
+%            end
+%            % D is the matrix 0f descriptors, size = (128,N),and ind is the
+%            % mapping from D to cen 
+%            [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+%            tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
+%            Cnt(:,i) = tmp';
+%         end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % parfor version 
+        if strcmp(opt.feature,'phow')
+           % phow method 
+           parfor i = 1:n_images
+               % calculate each image and save to "enc"
+               p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+               a = imread(p);
                [F,D] = vl_phow(rgb2gray(im2single(a)),'step',4,'floatdescriptors',true);
-           else
+               % D is the matrix 0f descriptors, size = (128,N),and ind is the
+               % mapping from D to cen 
+               [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+               tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
+               Cnt(:,i) = tmp';
+            end
+        else
+           % sift method 
+           for i = 1:n_images
+               % calculate each image and save to "enc"
+               p = fullfile(img_dir,strcat(num2str(img_names{i}),'.jpg'));
+               a = imread(p);
                [F,D] = vl_sift(rgb2gray(im2single(a))); 
-           end
-           % D is the matrix 0f descriptors, size = (128,N),and ind is the
-           % mapping from D to cen 
-           [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
-           tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
-           Cnt(:,i) = tmp';
+               % D is the matrix 0f descriptors, size = (128,N),and ind is the
+               % mapping from D to cen 
+               [ind,dist]=vl_kdtreequery(KDT,cen,double(D)); 
+               tmp = histc(ind,1:1000)./norm(histc(ind,1:1000),2);
+               Cnt(:,i) = tmp';
+            end
+            
         end
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % TODO save encodings
         eval(strcat(char(subset),'=Cnt;'));
         eval(strcat('save(''',out_path,''',''', char(subset),''')'));
@@ -179,7 +259,11 @@ for subset = {'background_train', ...
                   Cnt(128*j-127:128*j,i) = sqrt(abs(tmp));
               elseif strcmp(opt.enc_norm,'intra')==1
                   tmp = sum(res(:,ind==j),2);
-                  Cnt(128*j-127:128*j,i) = tmp/norm(tmp,2);
+                  if norm(tmp,2) ~= 0
+                    Cnt(128*j-127:128*j,i) = tmp/norm(tmp,2);
+                  else
+                    Cnt(128*j-127:128*j,i) = tmp;
+                  end
               else
                   % none method
                   Cnt(128*j-127:128*j,i) = sum(res(:,ind==j),2);
